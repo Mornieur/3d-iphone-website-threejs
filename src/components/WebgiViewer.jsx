@@ -1,4 +1,4 @@
-import {
+import React, {
   useRef,
   useState,
   useCallback,
@@ -16,68 +16,108 @@ import {
   SSAOPlugin,
   BloomPlugin,
   GammaCorrectionPlugin,
-  addBasePlugins,
-  CanvasSnipperPlugin,
   mobileAndTabletCheck,
 } from "webgi";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { scrollAnimation } from "../lib/scroll.animation";
 
-function WebgiViewer() {
+gsap.registerPlugin(ScrollTrigger);
+
+const WebgiViewer = forwardRef((props, ref) => {
   const canvasRef = useRef(null);
+  const [viewerRef, setViewerRef] = useState(null);
+  const [targetRef, setTargetRef] = useState(null);
+  const [cameraRef, setCameraRef] = useState(null);
+  const [positionRef, setPositionRef] = useState(null);
+  const canvasContainerRef = useRef(null);
+
+  useImperativeHandle(ref, () => ({
+    triggerPreview() {
+      canvasContainerRef.current.style.pointerEvents = "all";
+      props.contentRef.current.style.opacity = "0";
+      gsap.to(positionRef, {
+        x: 13.04,
+        y: -2.01,
+        z: 2.29,
+        duration: 2,
+        onUpdate: () => {
+          viewerRef.setDirty();
+          cameraRef.positionTargetUpdated(true);
+        },
+      });
+      gsap.to(targetRef, { x: 0.11, y: 0.0, z: 0.0, duration: 2 });
+
+      viewerRef.scene.activeCamera.setCameraOptions({ controlsEnabled: true });
+    },
+  }));
+  const memoizedScrollAnimation = useCallback((position, target, onUpdate) => {
+    if (position && target && onUpdate) {
+      scrollAnimation(position, target, onUpdate);
+    }
+  }, []);
 
   const setupViewer = useCallback(async () => {
-    // Initialize the viewer
     const viewer = new ViewerApp({
       canvas: canvasRef.current,
     });
 
-    // Add some plugins
+    setViewerRef(viewer);
+
     const manager = await viewer.addPlugin(AssetManagerPlugin);
 
-    // Add plugins individually.
-    // await viewer.addPlugin(GBufferPlugin)
-    // await viewer.addPlugin(new ProgressivePlugin(32))
-    // await viewer.addPlugin(new TonemapPlugin(!viewer.useRgbm))
-    // await viewer.addPlugin(GammaCorrectionPlugin)
-    // await viewer.addPlugin(SSRPlugin)
-    // await viewer.addPlugin(SSAOPlugin)
-    // await viewer.addPlugin(DiamondPlugin)
-    // await viewer.addPlugin(FrameFadePlugin)
-    // await viewer.addPlugin(GLTFAnimationPlugin)
-    // await viewer.addPlugin(GroundPlugin)
-    // await viewer.addPlugin(BloomPlugin)
-    // await viewer.addPlugin(TemporalAAPlugin)
-    // await viewer.addPlugin(AnisotropyPlugin)
+    const camera = viewer.scene.activeCamera;
+    const position = camera.position;
+    const target = camera.target;
 
-    // or use this to add all main ones at once.
-    await addBasePlugins(viewer);
+    setCameraRef(camera);
+    setPositionRef(position);
+    setTargetRef(target);
 
-    // Add more plugins not available in base, like CanvasSnipperPlugin which has helpers to download an image of the canvas.
-    await viewer.addPlugin(CanvasSnipperPlugin);
+    await viewer.addPlugin(GBufferPlugin);
+    await viewer.addPlugin(new ProgressivePlugin(32));
+    await viewer.addPlugin(new TonemapPlugin(true));
+    await viewer.addPlugin(GammaCorrectionPlugin);
+    await viewer.addPlugin(BloomPlugin);
+    await viewer.addPlugin(SSRPlugin);
+    await viewer.addPlugin(SSAOPlugin);
 
-    // This must be called once after all plugins are added.
     viewer.renderer.refreshPipeline();
 
     await manager.addFromPath("scene-black.glb");
 
-    // Load an environment map if not set in the glb file
-    // await viewer.scene.setEnvironment(
-    //     await manager.importer!.importSinglePath<ITexture>(
-    //         "./assets/environment.hdr"
-    //     )
-    // );
+    viewer.getPlugin(TonemapPlugin).config.clipBackground = true;
+
+    viewer.scene.activeCamera.setCameraOptions({ controlsEnabled: false });
+
+    window.scrollTo(0, 0);
+
+    let needsUpdate = true;
+
+    const onUpdate = () => {
+      needsUpdate = true;
+      viewer.setDirty();
+    };
+
+    viewer.addEventListener("preFrame", () => {
+      if (needsUpdate) {
+        camera.positionTargetUpdated(true);
+        needsUpdate = false;
+      }
+    });
+
+    memoizedScrollAnimation(position, target, onUpdate);
   }, []);
 
   useEffect(() => {
     setupViewer();
-  }, []);
+  }, [setupViewer]);
 
   return (
-    <div id="webgi-canvas-container">
-      <canvas id="webgi-canvas" href={canvasRef} />
+    <div ref={canvasContainerRef} id="webgi-canvas-container">
+      <canvas id="webgi-canvas" ref={canvasRef} />
     </div>
   );
-}
+});
 
 export default WebgiViewer;
