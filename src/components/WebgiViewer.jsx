@@ -16,7 +16,6 @@ import {
   SSAOPlugin,
   BloomPlugin,
   GammaCorrectionPlugin,
-  mobileAndTabletCheck,
 } from "webgi";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
