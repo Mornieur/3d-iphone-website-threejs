@@ -7,7 +7,6 @@ function DisplaySection() {
         A display that's up to 2x brighter in the sun.
       </span>
       <button className="button"> Try me!</button>
-      <button className="back-button"> TOP</button>
     </div>
   );
 }
