@@ -1,8 +1,17 @@
-# 3D iPhone Website using Three.js
+<div align='center'>
+  <h1 >📱 3D iPhone Website using Three.js</h1>
+</div>
+
+<br />
+
+<div align='center'>
+
+  <img src=".src/assets/images/3d-iphone-website.png" alt='project image' width='600'  />
+</div>
+
+## Description
 
 This is a 3D iPhone website created using Three.js, a JavaScript 3D library. The website features a 3D model of an iPhone, which the user can interact with and explore.
-
-![Screenshot of the 3D iPhone Website](screenshot.png)
 
 ## Getting Started
 
