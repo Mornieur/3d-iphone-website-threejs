@@ -5,7 +5,6 @@
 <br />
 
 <div align='center'>
-
   <img src="./src/assets/images/3d-iphone-website.png" alt='project image' width='600'  />
 </div>
 
